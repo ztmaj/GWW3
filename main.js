@@ -10,8 +10,6 @@
  *
  ******************************************************************************/
 
-
-
 var τ = 2 * Math.PI;
 var MAX_TASK_TIME = 100;  // amount of time before a task yields control (milliseconds)
 var MIN_SLEEP_TIME = 25;  // amount of time a task waits before resuming (milliseconds)
@@ -58,67 +56,6 @@ var map = L.map('map',{
  *
  *
  ******************************************************************************/
-var data = [
-[1,90,0.5,39.91667,116.41667], // no, wd, wv, lat, lng
-[2,90,0.4,34.5,121.43333],
-[3,225,0.7,39.13333,117.2],
-[4,200,1,22.2,114.1],
-[5,225,0.9,23.16667,113.23333],
-[6,180,1.5,30.26667,120.2],
-[7,318,1.7,29.56667,106.45],
-[8,180,2,26.08333,119.3],
-[9,57,1.8,36.03333,103.73333],
-[10,157,3.2,26.56667,106.71667],
-[11,57,3.3,28.21667,113],
-[12,320,2.4,32.05,118.78333],
-[13,180,1.9,28.68333,115.9],
-[14,25,2.8,41.8,123.38333],
-[15,180,3.2,37.86667,112.53333],
-[16,8,2.5,30.66667,104.06667],
-[17,213,1.8,29.6,91],
-[18,27,1.3,43.76667,87.68333],
-[19,113,1.4,25.05,102.73333],
-[20,180,0.8,34.26667,108.95],
-[21,20,1.5,36.56667,101.75],
-[22,67,2.4,38.46667,106.26667],
-[23,315,2,45.75,126.63333],
-[24,20,2.3,43.88333,125.35],
-[25,135,1.3,30.51667,114.31667],
-[26,318,1.9,34.76667,113.65],
-[27,215,1.8,38.03333,114.48333],
-[28,10,4.3,20.01667,110.35],
-[29,157,2.1,22.2,113.5]];
-
-var stations = [
-[1,39.91667,116.41667],
-[2,34.5,121.43333],
-[3,39.13333,117.2],
-[4,22.2,114.1],
-[5,23.16667,113.23333],
-[6,30.26667,120.2],
-[7,29.56667,106.45],
-[8,26.08333,119.3],
-[9,36.03333,103.73333],
-[10,26.56667,106.71667],
-[11,28.21667,113],
-[12,32.05,118.78333],
-[13,28.68333,115.9],
-[14,41.8,123.38333],
-[15,37.86667,112.53333],
-[16,30.66667,104.06667],
-[17,29.6,91],
-[18,43.76667,87.68333],
-[19,25.05,102.73333],
-[20,34.26667,108.95],
-[21,36.56667,101.75],
-[22,38.46667,106.26667],
-[23,45.75,126.63333],
-[24,43.88333,125.35],
-[25,30.51667,114.31667],
-[26,34.76667,113.65],
-[27,38.03333,114.48333],
-[28,20.01667,110.35],
-[29,22.2,113.5]];
 
 var tempdata;
 $.getJSON('data/goldwindEarth_temp.json',function(json){
@@ -180,17 +117,6 @@ function createSettings() {
         styles.push(asColorStyle(j, j, j, 1));
     }
     return settings;
-}
-length
-/**
- * Draws the locations of the sampling stations as small points on the map. For fun.
- */
-function plotStations() {
-    // Convert station data to GeoJSON format.
-    var features = [];
-    stations.forEach(function(station) {
-        L.marker([station[1], station[2]]).addTo(map);
-    });
 }
 
 /**
@@ -317,11 +243,17 @@ var field1 = function(x, y) {
 function interpolateField() {
     var d = when.defer();
 
-    var points = [];
-    data.forEach(function(sample) {
-        var value = componentize(sample[1], sample[2]);
-            points.push([sample[4], sample[3], value]);
+    var dataWind;
+    $.getJSON('data/dataWind.json',function(json){
+        dataWind = json;
     });
+
+    var points = [];
+    for(var k in dataWind.data) {
+        var strs=k.split("_");
+        var value = componentize(dataWind.data[k][0], dataWind.data[k][1]);
+        points.push([strs[0], strs[1], value]);
+    }
 
 
     if (points.length < 5) {
@@ -937,7 +869,7 @@ var heat = L.heatLayer(addressPoints,{
 
 //temp 
 var settings = createSettings();
-//plotStations();
+
 //temp 
 interpolateField();
 
@@ -1072,10 +1004,8 @@ function submitFormOverlay () {
         }
         */
 
-        var strs= new Array(); //定义一数组
+        var strs= new Array();
         for(var k in tempdata.data) {
-         
-            //遍历对象，k即为key，obj[k]为当前k对应的值
             strs=k.split("_");
             addressPoints.push([strs[0], strs[1], tempdata.data[k]]);
          
