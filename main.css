@@ -1,0 +1,28 @@
+html, body, #map { height: 100%; padding: 0; margin: 0;}
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, fieldset, input, textarea, blockquote, th, td, table {
+    margin: 0;
+    padding: 0;
+}
+body {
+    font-family: Helvetica,Arial,sans-serif;
+    font-variant: normal;
+    font-weight: normal;
+    text-transform: none;
+}
+
+#settings-div {
+    color: #6b6b6b;
+    font-size: 14px;
+    letter-spacing: normal;
+    text-align: left;
+}
+
+.linear{/*线性渐变样式*/ 
+    background-color: #1FA9F4; /*老的浏览器不支持渐变显示单色，无渐变*/ 
+    background-image: -moz-linear-gradient(top, blue 0%, yellow, red 100%); /* FF3.6+ */ 
+    background-image: -webkit-gradient(linear, top, color-stop(0%,blue), color-stop(yellow), color-stop(100%,red)); /* Chrome,Safari4+ */ 
+    background-image: -o-linear-gradient(top,blue 0%, yellow, red 100%); /* Opera 11.10+ */ 
+    background-image: -ms-linear-gradient(top,blue 0%, yellow, red 100%); /* IE10+ */ 
+    background-image: linear-gradient(to top,blue 0%, yellow, red 100%); /* W3C */ 
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='blue',endColorstr='red',GradientType=0 ); /* IE6-8 */ 
+}

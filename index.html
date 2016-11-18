@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GlodWind Visual Sys</title>
+    <!-- based on leaflet quick example: http://leafletjs.com/examples/quick-start-example.html -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./leaflet.css" />
+
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    
+    <link rel="stylesheet" href="public/MeasureControl/docs/leaflet-draw/dist/leaflet.draw.css" />
+    <link rel="stylesheet" href="public/MeasureControl/leaflet.measurecontrol.css" />
+
+    <link rel="stylesheet" href="public/jquery-ui-1.12.1.custom/jquery-ui.min.css" />
+    <!--<link rel="stylesheet" href="public/selectToUISlider/css/redmond/jquery-ui-1.7.1.custom.css" type="text/css" />
+    <link rel="Stylesheet" href="public/selectToUISlider/css/ui.slider.extras.css" type="text/css" />-->
+
+    <!-- Timedimension -->
+    <!--<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/default.min.css"> -->
+    <link rel="stylesheet" href="public/fullscreen/Control.FullScreen.min.css">
+    <link rel="stylesheet" href="public/TimeDimension/dist/leaflet.timedimension.control.min.css" />
+    <link rel="stylesheet" href="public/TimeDimension/examples/css/style.css" />
+
+    <!--Context menu-->
+    <link rel="stylesheet" href="public/Leaflet.contextmenu/dist/leaflet.contextmenu.css"/>
+
+    <!--Filter-button-->
+    <link rel="stylesheet" href="public/filter-button/leaflet-easy-button.css" />
+    <link rel="stylesheet" href="public/filter-button/leaflet-tag-filter-button.css" />
+
+    <!--Color Scale-->
+    <link rel="stylesheet" href="public/Leafelt.colorscale.maj/colorscale-maj.css" />
+
+    <!-- Load geocoding plugin after Leaflet -->
+    <link rel="stylesheet" href="public/geocoder-mapzen/leaflet-geocoder-mapzen.css">
+    
+    <link rel="stylesheet" href="public/sidebar-v2/css/leaflet-sidebar.css" />
+    <link rel="stylesheet" href="public/locate/L.Control.Locate.min.css" />
+<!--<link rel="stylesheet" href="public/font-awesome.min.css" />-->
+    <!--[if lte IE 8]>
+       <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.ie.css" />
+       <![endif]-->
+
+    <link rel="stylesheet" href="main.css" />
+
+
+</head>
+<body>
+<!--------------------------------------------------------------
+----------------------------Page Layout---------------------------
+------------------------------------------------------------------>
+
+<!--------------------->
+<!------SideBar-------->
+<!--------------------->
+<!--------------------->
+
+<div id="sidebar" class="sidebar collapsed" style="top:200px; max-height:450px">
+    <div class="sidebar-tabs">
+        <ul role="tablist">
+            <li class="">
+                <a href="#forecast" role="tab"><i class="fa fa-sun-o"></i></a>
+            </li>
+            <li>
+                <a href="#chart" role="tab"><i class="fa fa-bar-chart"></i></a>
+            </li>
+            <li>
+                <a href="#radar" role="tab"><i class="fa fa-industry"></i></a>
+            </li>
+            <li class="">
+                <a href="#settings" role="tab"><i class="fa fa-gear"></i></a>
+            </li>
+        </ul>    
+    </div>
+    <div class="sidebar-content" style="filter:alpha(opacity:60);opacity:0.6"><!--style="filter:alpha(opacity:40);opacity:0.4"-->
+        <div id="forecast" class="sidebar-pane active">
+            <h1 class="sidebar-header">
+                气象预测
+                <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
+            </h1>
+
+            <iframe id="meteoblue"  frameborder="0"  allowtransparency="true" sandbox="allow-same-origin allow-scripts allow-popups" style="width: 216px;height: 368px">
+            </iframe>
+        </div>
+        <div id="chart" class="sidebar-pane">
+            <h1 class="sidebar-header">
+                历史数据
+                <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
+            </h1>
+            <span id="chart-latlng" style="font-size: 14pt" ></span>
+            <div id="chart-data" style="width: 350px; height: 350px;">
+                <!--weather data-->
+            </div>
+        </div>
+        <div id="radar" class="sidebar-pane">
+            <h1 class="sidebar-header">
+                选址评估
+                <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
+            </h1>
+            <span id="radar-latlng" style="font-size: 14pt" ></span>
+            <div id="radar-data" style="width: 350px; height: 350px;">
+                <!--radar data-->
+            </div>
+        </div>
+        <div id="settings" class="sidebar-pane">
+            <h1 class="sidebar-header">
+                设置
+                <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
+            </h1>
+            <!--Form-->
+            <p>密度：&nbsp&nbsp&nbsp&nbsp   <input type="range" id="density" value="300" min='50' max='1500' onchange="submitForm()"/></p>
+            <p>帧率：&nbsp&nbsp&nbsp&nbsp   <input type="range" id="frameRate" value="200" min='50' max='400' onchange="submitForm()"/></p>
+            <p>大小：&nbsp&nbsp&nbsp&nbsp   <input type="range" id="thickness" value="1" min='0.2' max='3' step="0.2" onchange="submitForm()"/></p>
+            <p>长度：&nbsp&nbsp&nbsp&nbsp   <input type="range" id="length" value="40" min='20' max='60' onchange="submitForm()"/></p>
+            风速动画开关：
+            <input type="radio" name="windanimateflag" value="windopen" id="windopen" onclick="submitForm()"><label for="windopen">打开</label>
+            <input type="radio" name="windanimateflag" value="windclose" id="windclose" onclick="submitForm()" checked><label for="windclose">关闭</label>
+            <hr>
+            <p>背景透明度：                 <input type="range" id="backgroundopacity" value="1" min='0' max='1' step="0.1" onchange="submitForm()"/></p>
+            叠加图：<br>
+            <input type="radio" name="overlaytype" value="overlaytypeNo" id="overlaytypeNo" onclick="submitFormOverlay()" checked/><label for="overlaytypeNo">无</label>
+            <input type="radio" name="overlaytype" value="overlaytypeWind" id="overlaytypeWind" onclick="submitFormOverlay()"/><label for="overlaytypeWind">风</label>
+            <input type="radio" name="overlaytype" value="overlaytypeTemp" id="overlaytypeTemp" onclick="submitFormOverlay()"/><label for="overlaytypeTemp">温度</label>
+            <input type="radio" name="overlaytype" value="overlaytypeHumidity" id="overlaytypeHumidity" onclick="submitFormOverlay()"/><label for="overlaytypeHumidity">湿度</label>
+            <input type="radio" name="overlaytype" value="overlaytypeOzone" id="overlaytypeOzone" onclick="submitFormOverlay()"/><label for="overlaytypeOzone">臭氧层</label>
+            <input type="radio" name="overlaytype" value="overlaytypeRain" id="overlaytypeRain" onclick="submitFormOverlay()"/><label for="overlaytypeRain">积雨</label>
+            <input type="radio" name="overlaytype" value="overlaytypeSnow" id="overlaytypeSnow" onclick="submitFormOverlay()"/><label for="overlaytypeSnow">积雪</label>
+            <input type="radio" name="overlaytype" value="overlaytypePressure" id="overlaytypePressure" onclick="submitFormOverlay()"/><label for="overlaytypePressure">气压</label>
+        </div>
+    </div>
+</div>
+
+<!--------------------->
+<!------Map----------->
+<!-------------------->
+
+<div id="map"></div>
+
+
+<!---------------------->
+<!------ColorScale------>
+<!---------------------->
+<div style="position:absolute; width:100px; height:300px; right:10px; bottom:100px">
+    <div style="width:80px; height:200px; float:left">
+        <div style="height:185px">
+            <p id="colorscaleMaxValue" style="font-size:12px; padding:0px; margin-left:0px;margin-bottom:0px;margin-top:0px;margin-right:3px" align="right"></p>
+        </div>
+        <div style="height:15px">
+            <p id="colorscaleMinValue" style="font-size:12px; padding:0px; margin-left:0px;margin-bottom:0px;margin-top:0px;margin-right:3px" align="right"></p>
+        </div>
+    </div>
+    <div id="divColorScale" class="linear" style="border:1px solid; width:15px; height:200px; float:left">
+    </div>
+</div>
+
+
+
+<!--------------------------------------------------------------
+----------------------------Include Script------------------------
+------------------------------------------------------------------>
+
+    <!-- Public JS framework -->
+    <script src="./when.js" charset="utf-8"></script>
+    <script src="./d3.v3.js" charset="utf-8"></script>
+    <script src="./topojson.v1.js" charset="utf-8"></script>
+    <script src="./mvi.js" charset="utf-8"></script>
+
+    <script src="./leaflet.js"></script>
+    <script src="./leaflet_canvas_layer.js"></script>
+    <script src="public/google-places-autocomplete/js/leaflet-gplaces-autocomplete.js"></script>
+    <script src="public/sidebar-v2/js/leaflet-sidebar.js"></script>
+    <script src="public/locate/L.Control.Locate.min.js" charset="utf-8"></script>
+    <script src="public/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+    <script src="public/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
+    <!--<script src="public/selectToUISlider/selectToUISlider.jQuery.js"></script>-->
+    <script src="public/echarts.js"></script>
+
+    <!-- Load geocoding plugin after Leaflet -->
+    <script src="public/geocoder-mapzen/leaflet-geocoder-mapzen.js"></script>
+
+    <!--TimeDimension -->
+    <script type="text/javascript" src="public/fullscreen/Control.FullScreen.min.js"></script>
+    <script type="text/javascript" src="https://cdn.rawgit.com/nezasa/iso8601-js-period/master/iso8601.min.js"></script>
+    <!--<script src="http://code.highcharts.com/stock/highstock.js"></script>-->
+    <script type="text/javascript" src="public/TimeDimension/src/leaflet.timedimension.js"></script>
+    <script type="text/javascript" src="public/TimeDimension/src/leaflet.timedimension.util.js"></script>
+    <script type="text/javascript" src="public/TimeDimension/src/leaflet.timedimension.layer.js"></script>
+    <script type="text/javascript" src="public/TimeDimension/src/leaflet.timedimension.layer.wms.js"></script>
+    <script type="text/javascript" src="public/TimeDimension/src/leaflet.timedimension.player.js"></script>
+    <script type="text/javascript" src="public/TimeDimension/src/leaflet.timedimension.control.js"></script>
+
+    <!--<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>-->
+
+    <!--FilterButton -->
+    <script src="public/filter-button/leaflet-easy-button.js"></script>
+    <script src="public/filter-button/leaflet-tag-filter-button.js"></script>
+
+    <!--Contextmenu -->
+    <script src="public/Leaflet.contextmenu/dist/leaflet.contextmenu.js"></script>
+    <script src="public/Leaflet.contextmenu/src/Map.ContextMenu.js"></script>
+
+    <!--MeasureControl -->
+    <script src="public/MeasureControl/docs/leaflet-draw/dist/leaflet.draw.js"></script>
+    <script src="public/MeasureControl/leaflet.measurecontrol.js"></script>
+
+    <!--Heatcanvas -->
+    <script src="public/Leaflet.heat/dist/leaflet-heat.js"></script>
+
+    <!--ColorScale-->
+    <script src="public/Leafelt.colorscale.maj/colorscale-maj.js"></script>
+
+    <script src="./main.js"></script>
+
+
+</body>
+</html>
