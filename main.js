@@ -57,10 +57,11 @@ var map = L.map('map',{
  *
  ******************************************************************************/
 
-var tempdata;
+var tempdata = new Array;
 $.getJSON('data/goldwindEarth_temp.json',function(json){
     tempdata = json;
 });
+//http://54.222.192.208:64003/goldwindEarth?file=2016111600_180-temp-height-80m-gfs-0.50.json
 
 /**
  * An object {width:, height:} that describes the extent of the browser's view in pixels.
@@ -243,16 +244,21 @@ var field1 = function(x, y) {
 function interpolateField() {
     var d = when.defer();
 
-    var dataWind;
+    var dataWind = new Array;
     $.getJSON('data/dataWind.json',function(json){
         dataWind = json;
+        console.log("dataWind.data: "+dataWind.data);
     });
 
     var points = [];
-    for(var k in dataWind.data) {
+    /**/
+    for(var k in (dataWind.data)) {
         var strs=k.split("_");
         var value = componentize(dataWind.data[k][0], dataWind.data[k][1]);
         points.push([strs[0], strs[1], value]);
+
+        console.log("datawind.data[k]: "+dataWind.data[k]);
+        console.log("strs: "+strs)
     }
 
 
@@ -852,7 +858,7 @@ var addressPoints = [
 var heat = L.heatLayer(addressPoints,{
     radius: 15,
     blur: 15,
-    gradient: {0:'Blue', 0.5:'yellow', 1:'red'  }
+    gradient: {0:'Blue', 150:'yellow', 300:'red'  }
 }).addTo(map);
 
 /*****************************
@@ -1008,7 +1014,7 @@ function submitFormOverlay () {
         for(var k in tempdata.data) {
             strs=k.split("_");
             addressPoints.push([strs[0], strs[1], tempdata.data[k]]);
-         
+
             strs=[];
         }
 
