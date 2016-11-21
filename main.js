@@ -9,7 +9,6 @@
  *
  *
  ******************************************************************************/
-
 var τ = 2 * Math.PI;
 var MAX_TASK_TIME = 100;  // amount of time before a task yields control (milliseconds)
 var MIN_SLEEP_TIME = 25;  // amount of time a task waits before resuming (milliseconds)
@@ -58,9 +57,11 @@ var map = L.map('map',{
  ******************************************************************************/
 
 var tempdata = new Array;
-$.getJSON('data/goldwindEarth_temp.json',function(json){
+$.ajaxSettings.async = false; 
+$.getJSON('data/test.json',function(json){
     tempdata = json;
 });
+//data/goldwindEarth_temp.json
 //http://54.222.192.208:64003/goldwindEarth?file=2016111600_180-temp-height-80m-gfs-0.50.json
 
 /**
@@ -243,24 +244,21 @@ var field1 = function(x, y) {
  */
 function interpolateField() {
     var d = when.defer();
-
-    var dataWind = new Array;
-    $.getJSON('data/dataWind.json',function(json){
-        dataWind = json;
-        console.log("dataWind.data: "+dataWind.data);
-    });
-
     var points = [];
-    /**/
-    for(var k in (dataWind.data)) {
-        var strs=k.split("_");
-        var value = componentize(dataWind.data[k][0], dataWind.data[k][1]);
-        points.push([strs[0], strs[1], value]);
+    
+    $.ajaxSettings.async = false; 
+    $.getJSON('data/dataWind.json',function(json){
+        for(var k in json.data) {
+            var strs=k.split("_");
+            var value = componentize(json.data[k][0], json.data[k][1]);
+            points.push([strs[0], strs[1], value]);
+	    //console.log("k:"+k);
+	    //console.log("json.data[k]:"+json.data[k]);
+	    //console.log("strs:"+strs);
+	    //console.log("value: "+ value);
+        }
 
-        console.log("datawind.data[k]: "+dataWind.data[k]);
-        console.log("strs: "+strs)
-    }
-
+    });
 
     if (points.length < 5) {
         return d.reject("points.length < 5");
@@ -324,14 +322,6 @@ function interpolateField() {
 
     return d.promise;
 }
-
-
-
-
-
-
-
-
 
 
 /**
