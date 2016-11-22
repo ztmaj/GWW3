@@ -51,18 +51,10 @@ var map = L.map('map',{
 
 
 /*******************************************************************************
- * Test data
+ * interpolate
  *
  *
  ******************************************************************************/
-
-var tempdata = new Array;
-$.ajaxSettings.async = false; 
-$.getJSON('data/test.json',function(json){
-    tempdata = json;
-});
-//data/goldwindEarth_temp.json
-//http://54.222.192.208:64003/goldwindEarth?file=2016111600_180-temp-height-80m-gfs-0.50.json
 
 /**
  * An object {width:, height:} that describes the extent of the browser's view in pixels.
@@ -257,6 +249,7 @@ function interpolateField() {
 	    //console.log("strs:"+strs);
 	    //console.log("value: "+ value);
         }
+        //goldwindEarth_wind.json
 
     });
 
@@ -846,9 +839,9 @@ var addressPoints = [
 ];
 
 var heat = L.heatLayer(addressPoints,{
-    radius: 15,
-    blur: 15,
-    gradient: {0:'Blue', 150:'yellow', 300:'red'  }
+    radius: 10,
+    blur: 10,
+    gradient: {0:'Blue', 0.5:'yellow', 1:'red'  }
 }).addTo(map);
 
 /*****************************
@@ -1000,17 +993,34 @@ function submitFormOverlay () {
         }
         */
 
-        var strs= new Array();
-        for(var k in tempdata.data) {
-            strs=k.split("_");
-            addressPoints.push([strs[0], strs[1], tempdata.data[k]]);
 
-            strs=[];
-        }
+        $.ajaxSettings.async = false; 
+        $.getJSON('data/goldwindEarth_temp2.json',function(json){
+
+            var i=0;
+            for(var k in json.data) {
+                var strs = [];
+                strs=k.split("_");
+                addressPoints.push([strs[1], strs[0], (parseInt(json.data[k])-273+50)/100]);
+
+
+                
+                i++;
+                if (i>10000000){
+                    break;
+                }
+            }
+            console.log("i: "+ i);
+
+        });
+        //data/goldwindEarth_temp.json
+        //http://54.222.192.208:64003/goldwindEarth?file=2016111600_180-temp-height-80m-gfs-0.50.json
+
+
 
     }
 
-
+    
     heat.setLatLngs(addressPoints);
 
     //redraw
