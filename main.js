@@ -990,7 +990,7 @@ function submitFormOverlay () {
 
 
         $.ajaxSettings.async = false; 
-        $.getJSON('data/goldwindEarth_temp2.json',function(json){
+        $.getJSON('dataTemp.json',function(json){
 
             var i=0;
             for(var k in json.data) {
