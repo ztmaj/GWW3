@@ -19,10 +19,10 @@ body {
 
 .linear{/*线性渐变样式*/ 
     background-color: #1FA9F4; /*老的浏览器不支持渐变显示单色，无渐变*/ 
-    background-image: -moz-linear-gradient(top, blue 0%, yellow, red 100%); /* FF3.6+ */ 
-    background-image: -webkit-gradient(linear, top, color-stop(0%,blue), color-stop(yellow), color-stop(100%,red)); /* Chrome,Safari4+ */ 
-    background-image: -o-linear-gradient(top,blue 0%, yellow, red 100%); /* Opera 11.10+ */ 
-    background-image: -ms-linear-gradient(top,blue 0%, yellow, red 100%); /* IE10+ */ 
-    background-image: linear-gradient(to top,blue 0%, yellow, red 100%); /* W3C */ 
+    background-image: -moz-linear-gradient(top, green 0%, Blue 20%, yellow 50%, coral 70%, orangered 100%); /* FF3.6+ */ 
+    background-image: -webkit-gradient(linear, top, color-stop(0%,green), color-stop(20%,Blue), color-stop(yellow), color-stop(70%,coral), color-stop(100%,orangered)); /* Chrome,Safari4+ */ 
+    background-image: -o-linear-gradient(top,green 0%, Blue 20%, yellow 50%, coral 70%, orangered 100%); /* Opera 11.10+ */ 
+    background-image: -ms-linear-gradient(top,green 0%, Blue 20%, yellow 50%, coral 70%, orangered 100%); /* IE10+ */ 
+    background-image: linear-gradient(to top,green 0%, Blue 20%, yellow 50%, coral 70%, orangered 100%); /* W3C */ 
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='blue',endColorstr='red',GradientType=0 ); /* IE6-8 */ 
 }

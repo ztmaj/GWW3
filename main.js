@@ -831,17 +831,12 @@ function RadarAdd(e){
 *****Leaflet Heat ***************
 *****************************/
 // lat, lng, intensity
-var addressPoints = [
-    //[30, 116, 10],
-    //[35, 116, 70],
-    //[40, 116, 100],
-    //[45, 116, 150]
-];
+var addressPoints = [];
 
 var heat = L.heatLayer(addressPoints,{
-    radius: 10,
-    blur: 10,
-    gradient: {0:'Blue', 0.5:'yellow', 1:'red'  }
+    radius: 25,
+    blur: 15, 
+    gradient: {0:'green', 0.2:'Blue',0.5:'yellow'/**/, 0.7:'coral',1:'orangered'  }
 }).addTo(map);
 
 /*****************************
@@ -954,8 +949,8 @@ function submitFormOverlay () {
             document.getElementById("colorscaleMinValue").innerHTML = "0 Km/h";
             document.getElementById("colorscaleMaxValue").innerHTML = "220 Km/h";        
         } else if (document.getElementById("overlaytypeTemp").checked == true){
-            document.getElementById("colorscaleMinValue").innerHTML = "-52 ℃";
-            document.getElementById("colorscaleMaxValue").innerHTML = "47 ℃";   
+            document.getElementById("colorscaleMinValue").innerHTML = "-10 ℃";
+            document.getElementById("colorscaleMaxValue").innerHTML = "35 ℃";   
         } else if (document.getElementById("overlaytypeHumidity").checked == true){
             document.getElementById("colorscaleMinValue").innerHTML = "0 %";
             document.getElementById("colorscaleMaxValue").innerHTML = "100 %"; 
@@ -1001,12 +996,11 @@ function submitFormOverlay () {
             for(var k in json.data) {
                 var strs = [];
                 strs=k.split("_");
-                addressPoints.push([strs[1], strs[0], (parseInt(json.data[k])-273+50)/100]);
-
-
-                
+                addressPoints.push([strs[1], strs[0], (parseInt(json.data[k])-273+10)/45]);
+//L.marker([strs[1],strs[0]]).addTo(map);
+//console.log("temp:"+(parseInt(json.data[k])-273));
                 i++;
-                if (i>10000000){
+                if (i>1000000){
                     break;
                 }
             }
