@@ -239,6 +239,7 @@ function interpolateField() {
     var points = [];
     
     $.ajaxSettings.async = false; 
+    //goldwindEarth_wind.json
     $.getJSON('data/dataWind.json',function(json){
         for(var k in json.data) {
             var strs=k.split("_");
