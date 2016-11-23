@@ -1,10 +1,10 @@
 {
-    "name": "Leaflet.Canvas",
-    "description": "full screen canvas layer for Leaflet",
-    "version": "1.0.1",
+    "name": "GWwind",
+    "description": "Visual Wind layer for Leaflet",
+    "version": "0.0.1",
     "author": {
-        "name": "Javi Santana",
-        "url": "http://cartodb.com",
-        "email": "jsantana@vizzuality.com"
+        "name": "yutong-mj",
+        "url": "http://",
+        "email": "ztmaj@"
     }
 }
