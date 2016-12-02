@@ -49,6 +49,10 @@ var map = L.map('map',{
         }]     
     });
 
+map.on('moveend', function(ev) {
+    submitForm();
+    submitFormOverlay();
+});
 
 /*******************************************************************************
  * interpolate
@@ -865,7 +869,7 @@ http://api.map.baidu.com/cloudgc/v1?ak=hrkqC4eAeVR1pxfm92aYAZqdZYV0CLVg&address=
 */
 
 
-var BigPointLayer = L.CanvasLayer.extend({
+var GWwindLayer = L.CanvasLayer.extend({
   renderCircle: function(ctx, point, radius) {
     ctx.fillStyle = 'rgba(255, 60, 60, 0.2)';
     ctx.strokeStyle = 'rgba(255, 60, 60, 0.9)';
@@ -904,7 +908,7 @@ var BigPointLayer = L.CanvasLayer.extend({
   }
 });
 
-var layer = new BigPointLayer();
+var layer = new GWwindLayer();
 layer.addTo(map);
 
 /////////////////////////////////////////////////////////////////////////////
