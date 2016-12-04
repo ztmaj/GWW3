@@ -40,9 +40,9 @@
 <!--<link rel="stylesheet" href="js/lib/font-awesome.min.css" />-->
     <!--[if lte IE 8]>
        <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.ie.css" />
-       <![endif]-->
+    <![endif]-->
 
-    <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="css/wind.css" />
 
 
 </head>
@@ -54,8 +54,6 @@
 <!--------------------->
 <!------SideBar-------->
 <!--------------------->
-<!--------------------->
-
 <div id="sidebar" class="sidebar collapsed" style="top:200px; max-height:450px">
     <div class="sidebar-tabs">
         <ul role="tablist">
@@ -109,24 +107,24 @@
                 <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
             </h1>
             <!--Form-->
-            <p>密度：&nbsp&nbsp&nbsp&nbsp   <input type="range" id="density" value="300" min='50' max='1500' onchange="submitForm()"/></p>
-            <p>帧率：&nbsp&nbsp&nbsp&nbsp   <input type="range" id="frameRate" value="200" min='50' max='400' onchange="submitForm()"/></p>
-            <p>大小：&nbsp&nbsp&nbsp&nbsp   <input type="range" id="thickness" value="1" min='0.2' max='3' step="0.2" onchange="submitForm()"/></p>
-            <p>长度：&nbsp&nbsp&nbsp&nbsp   <input type="range" id="length" value="40" min='20' max='60' onchange="submitForm()"/></p>
+            <p>密度：&nbsp&nbsp&nbsp&nbsp   <input type="range" id="density" onchange="onChangeSettings()"/>&nbsp<label hidden="hidden" id="densityLabel"></label></p>
+            <p>帧率：&nbsp&nbsp&nbsp&nbsp   <input type="range" id="frameRate" onchange="onChangeSettings()"/>&nbsp<label hidden="hidden" id="frameRateLabel"></label></p>
+            <p>大小：&nbsp&nbsp&nbsp&nbsp   <input type="range" id="thickness" onchange="onChangeSettings()"/>&nbsp<label hidden="hidden" id="thicknessLabel"></label></p>
+            <p>长度：&nbsp&nbsp&nbsp&nbsp   <input type="range" id="length" onchange="onChangeSettings()"/>&nbsp<label hidden="hidden" id="lengthLabel"></label></p>
             风速动画开关：
-            <input type="radio" name="windanimateflag" value="windopen" id="windopen" onclick="submitForm()"><label for="windopen">打开</label>
-            <input type="radio" name="windanimateflag" value="windclose" id="windclose" onclick="submitForm()" checked><label for="windclose">关闭</label>
+            <input type="radio" name="windanimateflag" value="windopen" id="windopen" onclick="onChangeSettings()">&nbsp<label for="windopen">打开</label>
+            <input type="radio" name="windanimateflag" value="windclose" id="windclose" onclick="onChangeSettings()" checked>&nbsp<label for="windclose">关闭</label>
             <hr>
-            <p>背景透明度：                 <input type="range" id="backgroundopacity" value="1" min='0' max='1' step="0.1" onchange="submitForm()"/></p>
+            <p>背景透明度：                 <input type="range" id="backgroundopacity" onchange="onChangeSettings()"/>&nbsp<label hidden="hidden" id="backgroundopacityLabel"></label></p>
             叠加图：<br>
-            <input type="radio" name="overlaytype" value="overlaytypeNo" id="overlaytypeNo" onclick="submitFormOverlay()" checked/><label for="overlaytypeNo">无</label>
-            <input type="radio" name="overlaytype" value="overlaytypeWind" id="overlaytypeWind" onclick="submitFormOverlay()"/><label for="overlaytypeWind">风</label>
-            <input type="radio" name="overlaytype" value="overlaytypeTemp" id="overlaytypeTemp" onclick="submitFormOverlay()"/><label for="overlaytypeTemp">温度</label>
-            <input type="radio" name="overlaytype" value="overlaytypeHumidity" id="overlaytypeHumidity" onclick="submitFormOverlay()"/><label for="overlaytypeHumidity">湿度</label>
-            <input type="radio" name="overlaytype" value="overlaytypeOzone" id="overlaytypeOzone" onclick="submitFormOverlay()"/><label for="overlaytypeOzone">臭氧层</label>
-            <input type="radio" name="overlaytype" value="overlaytypeRain" id="overlaytypeRain" onclick="submitFormOverlay()"/><label for="overlaytypeRain">积雨</label>
-            <input type="radio" name="overlaytype" value="overlaytypeSnow" id="overlaytypeSnow" onclick="submitFormOverlay()"/><label for="overlaytypeSnow">积雪</label>
-            <input type="radio" name="overlaytype" value="overlaytypePressure" id="overlaytypePressure" onclick="submitFormOverlay()"/><label for="overlaytypePressure">气压</label>
+            <input type="radio" name="overlaytype" value="overlaytypeNo" id="overlaytypeNo" onclick="onChangeSettingsOverlay()" checked/><label for="overlaytypeNo">无</label>
+            <input type="radio" name="overlaytype" value="overlaytypeWind" id="overlaytypeWind" onclick="onChangeSettingsOverlay()"/><label for="overlaytypeWind">风</label>
+            <input type="radio" name="overlaytype" value="overlaytypeTemp" id="overlaytypeTemp" onclick="onChangeSettingsOverlay()"/><label for="overlaytypeTemp">温度</label>
+            <input type="radio" name="overlaytype" value="overlaytypeHumidity" id="overlaytypeHumidity" onclick="onChangeSettingsOverlay()"/><label for="overlaytypeHumidity">湿度</label>
+            <input type="radio" name="overlaytype" value="overlaytypeOzone" id="overlaytypeOzone" onclick="onChangeSettingsOverlay()"/><label for="overlaytypeOzone">臭氧层</label>
+            <input type="radio" name="overlaytype" value="overlaytypeRain" id="overlaytypeRain" onclick="onChangeSettingsOverlay()"/><label for="overlaytypeRain">积雨</label>
+            <input type="radio" name="overlaytype" value="overlaytypeSnow" id="overlaytypeSnow" onclick="onChangeSettingsOverlay()"/><label for="overlaytypeSnow">积雪</label>
+            <input type="radio" name="overlaytype" value="overlaytypePressure" id="overlaytypePressure" onclick="onChangeSettingsOverlay()"/><label for="overlaytypePressure">气压</label>
         </div>
     </div>
 </div>
@@ -134,9 +132,7 @@
 <!--------------------->
 <!------Map----------->
 <!-------------------->
-
 <div id="map"></div>
-
 
 <!---------------------->
 <!------ColorScale------>
@@ -155,6 +151,23 @@
 </div>
 
 
+<!--------------------------------------------------------------
+----------------------------Templates----------------------------
+------------------------------------------------------------------>
+<script type="text/template" id="meteoblue-template">
+    <div id="meteoblue">
+        <iframe frameborder="0" id="meteoblueframe" allowtransparency="true" sandbox="allow-same-origin allow-scripts allow-popups" style="width: 216px;height: 368px">
+        </iframe>
+    </div>
+    <!--
+    <div class="view">
+        <input class="toggle" type="checkbox" <%= done ? 'checked="checked"' : '' %> />
+        <label><%- title %></label>
+        <a class="destroy"></a>
+    </div>
+    <input class="edit" type="text" value="<%- title %>" />
+    -->
+</script>
 
 <!--------------------------------------------------------------
 ----------------------------Include Script------------------------
@@ -173,6 +186,11 @@
     <script src="js/lib/locate/L.Control.Locate.min.js" charset="utf-8"></script>
     <script src="js/lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
     <script src="js/lib/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
+
+    <script src="js/lib/backbone/underscore.js"></script>
+    <script src="js/lib/backbone/backbone.js"></script>
+    <script src="js/lib/backbone/backbone.localStorage.js"></script>
+
     <!--<script src="js/lib/selectToUISlider/selectToUISlider.jQuery.js"></script>-->
     <script src="js/lib/echarts.js"></script>
 
@@ -210,8 +228,9 @@
     <!--ColorScale-->
     <script src="js/lib/Leafelt.colorscale.maj/colorscale-maj.js"></script>
 
-    <script src="js/app.js"></script>
 
+    <script src="js/lib/wind/models/windmodel.js"></script>
+    <script src="js/lib/wind/wind.js"></script>
 
 </body>
 </html>

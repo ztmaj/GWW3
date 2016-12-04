@@ -22,6 +22,27 @@ var animateCanceled = true;
 var particles = [];
 var tileLayerArray = new Array();
 
+// MVC instances
+var windMeteoblueModel = new MeteoblueModel();
+var windHisDataModel = new HisDataModel();
+var windRadarChartModel = new RadarChartModel();
+var windSettingsModel = new SettingsModel();
+
+// Global settings
+var settings;
+
+/**
+ * An object {width:, height:} that describes the extent of the browser's view in pixels.
+ */
+var view = function() {
+    var w = window, d = document.documentElement, b = document.getElementsByTagName("body")[0];
+    var x = w.innerWidth || d.clientWidth || b.clientWidth;
+    var y = w.innerHeight || d.clientHeight || b.clientHeight;
+    //var x = 600;
+    //var y = 400;
+    return {width: x, height: y};
+}();
+
 var map = L.map('map',{
         zoomControl: true,
         attributionControl: false,
@@ -50,8 +71,8 @@ var map = L.map('map',{
     });
 
 map.on('moveend', function(ev) {
-    submitForm();
-    submitFormOverlay();
+    onChangeSettings();
+    onChangeSettingsOverlay();
 });
 
 /*******************************************************************************
@@ -60,17 +81,6 @@ map.on('moveend', function(ev) {
  *
  ******************************************************************************/
 
-/**
- * An object {width:, height:} that describes the extent of the browser's view in pixels.
- */
-var view = function() {
-    var w = window, d = document.documentElement, b = document.getElementsByTagName("body")[0];
-    var x = w.innerWidth || d.clientWidth || b.clientWidth;
-    var y = w.innerHeight || d.clientHeight || b.clientHeight;
-    //var x = 600;
-    //var y = 400;
-    return {width: x, height: y};
-}();
 
 function asColorStyle(r, g, b, a) {
     return "rgba(" + r + ", " + g + ", " + b + ", " + a + ")";
@@ -94,18 +104,22 @@ function init() {
  *
  * @param topo a TopoJSON object holding geographic map data and its bounding box.
  */
-function createSettings() {
+function GetSettings() {
     var isFF = /firefox/i.test(navigator.userAgent);
     var bounds = {x:0, y:0, width:view.width, height:view.height};
     var styles = [];
     var settings = {
         displayBounds: bounds,
-        particleCount: document.getElementById("density").value,//temp default: Math.round(bounds.height / 0.24)
-        maxParticleAge: document.getElementById("length").value,  // max number of frames a particle is drawn before regeneration
+        //particleCount: document.getElementById("density").value,//temp default: Math.round(bounds.height / 0.24)
+        particleCount: windSettingsModel.get("density"),
+        //maxParticleAge: document.getElementById("length").value,  // max number of frames a particle is drawn before regeneration
+        maxParticleAge: windSettingsModel.get("length"),
         velocityScale: +(bounds.height / 700).toFixed(3),  // particle speed as number of pixels per unit vector
         fieldMaskWidth: isFF ? 2 : Math.ceil(bounds.height * 0.06),  // Wide strokes on FF are very slow
         fadeFillStyle: isFF ? "rgba(0, 0, 0, 0.95)" : "rgba(0, 0, 0, 0.97)",  // FF Mac alpha behaves differently
-        frameRate: document.getElementById("frameRate").value,  // desired milliseconds per frame
+        //frameRate: document.getElementById("frameRate").value,  // desired milliseconds per frame
+        frameRate: windSettingsModel.get("frameRate"),
+        thickness: windSettingsModel.get("thickness"),
         styles: styles,
         styleIndex: function(m) {  // map wind speed to a style
             return Math.floor(Math.min(m, 10) / 10 * (styles.length - 1));
@@ -116,6 +130,51 @@ function createSettings() {
     }
     return settings;
 }
+
+function UpdateView() {
+    //密度
+    document.getElementById("density").value = windSettingsModel.get("density");
+    document.getElementById("densityLabel").innerHTML = windSettingsModel.get("density");
+    document.getElementById("density").min = windSettingsModel.get("densityMin");
+    document.getElementById("density").max = windSettingsModel.get("densityMax");
+    document.getElementById("density").step = windSettingsModel.get("densityStep");
+
+    //帧率
+    document.getElementById("frameRate").value = windSettingsModel.get("frameRate");
+    document.getElementById("frameRateLabel").innerHTML = windSettingsModel.get("frameRate");
+    document.getElementById("frameRate").min = windSettingsModel.get("frameRateMin");
+    document.getElementById("frameRate").max = windSettingsModel.get("frameRateMax");
+    document.getElementById("frameRate").step = windSettingsModel.get("frameRateStep");
+
+    //粗细
+    document.getElementById("thickness").value = windSettingsModel.get("thickness");
+    document.getElementById("thicknessLabel").innerHTML = windSettingsModel.get("thickness");
+    document.getElementById("thickness").min = windSettingsModel.get("thicknessMin");
+    document.getElementById("thickness").max = windSettingsModel.get("thicknessMax");
+    document.getElementById("thickness").step = windSettingsModel.get("thicknessStep");
+
+    //长度
+    document.getElementById("length").value = windSettingsModel.get("length");
+    document.getElementById("lengthLabel").innerHTML = windSettingsModel.get("length");
+    document.getElementById("length").min = windSettingsModel.get("lengthMin");
+    document.getElementById("length").max = windSettingsModel.get("lengthMax");
+    document.getElementById("length").step = windSettingsModel.get("lengthStep");
+
+    //背景透明度
+
+    document.getElementById("backgroundopacity").value = windSettingsModel.get("backgroundopacity");
+    document.getElementById("backgroundopacityLabel").innerHTML = windSettingsModel.get("backgroundopacity");
+    document.getElementById("backgroundopacity").min = windSettingsModel.get("backgroundopacityMin");
+    document.getElementById("backgroundopacity").max = windSettingsModel.get("backgroundopacityMax");
+    document.getElementById("backgroundopacity").step = windSettingsModel.get("backgroundopacityStep");
+
+}
+
+//从模型中获取配置
+settings = GetSettings();
+
+//根据配置更新视图
+UpdateView();
 
 /**
  * Returns a random number between min (inclusive) and max (exclusive).
@@ -230,6 +289,95 @@ var field1 = function(x, y) {
 };
 
 
+/**
+ * Draws the overlay on top of the map. This process involves building a thin plate spline interpolation from
+ * the sample data, then walking the canvas and drawing colored rectangles at each point.
+ */
+function drawOverlay(stations, data, settings, masks) {
+    var recipe = displayData.recipe;
+    if (!recipe) {
+        return when.resolve(null);
+    }
+
+    log.time("drawing overlay");
+    var d = when.defer();
+
+    if (data.samples.length === 0) {
+        return d.reject("No Data in Response");
+    }
+
+    var points = buildPointsFromSamples(stations, data.samples, settings.projection, function(sample) {
+        var datum = sample[displayData.type];
+        return datum == +datum ? datum : null;
+    });
+
+    if (points.length < 3) {  // we need at least three samples to interpolate
+        return d.reject("東京都環境局がデータを調整中");
+    }
+
+    var min = recipe.min;
+    var max = recipe.max;
+    var range = max - min;
+    var rigidity = range * 0.05;  // use 5% of range as the rigidity
+
+    var interpolate = mvi.thinPlateSpline(points, rigidity);
+
+    var g = d3.select(OVERLAY_CANVAS_ID).node().getContext("2d");
+    var isLogarithmic = (recipe.scale === "log");
+    var LN101 = Math.log(101);
+    var bounds = settings.displayBounds;
+    var displayMask = masks.displayMask;
+    var xBound = bounds.x + bounds.width;  // upper bound (exclusive)
+    var yBound = bounds.y + bounds.height;  // upper bound (exclusive)
+    var x = bounds.x;
+
+    // Draw color scale for reference.
+    var n = view.width / 5;
+    for (var i = n; i >= 0; i--) {
+        g.fillStyle = asRainbowColorStyle((1 - (i / n)), 0.9);
+        g.fillRect(view.width - 10 - i, view.height - 20, 1, 10);
+    }
+
+    // Draw a column by interpolating a value for each point and painting a 2x2 rectangle
+    function drawColumn(x) {
+        for (var y = bounds.y; y < yBound; y += 2) {
+            if (displayMask(x, y)) {
+                // Clamp interpolated z value to the range [min, max].
+                var z = Math.min(Math.max(interpolate(x, y), min), max);
+                // Now map to range [0, 1].
+                z = (z - min) / range;
+                if (isLogarithmic) {
+                    // Map to logarithmic range [1, 101] then back to [0, 1]. Seems legit.
+                    z = Math.log(z * 100 + 1) / LN101;
+                }
+                g.fillStyle = asRainbowColorStyle(z, 0.4);
+                g.fillRect(x, y, 2, 2);
+            }
+        }
+    }
+
+    (function batchDraw() {
+        try {
+            var start = +new Date;
+            while (x < xBound) {
+                drawColumn(x);
+                x += 2;
+                if ((+new Date - start) > MAX_TASK_TIME) {
+                    // Drawing is taking too long. Schedule the next batch for later and yield.
+                    setTimeout(batchDraw, MIN_SLEEP_TIME);
+                    return;
+                }
+            }
+            d.resolve(interpolate);
+            log.timeEnd("drawing overlay");
+        }
+        catch (e) {
+            d.reject(e);
+        }
+    })();
+
+    return d.promise;
+}
 
 /**
  * Returns a promise for a vector field function (see createField). The vector field uses the sampling stations'
@@ -372,7 +520,8 @@ function animate(settings, field, g) {
         });
     }
 
-    g.lineWidth = document.getElementById("thickness").value; //add by maj default:1.0
+    //g.lineWidth = document.getElementById("thickness").value; //add by maj default:1.0
+    g.lineWidth = settings.thickness;
     g.fillStyle = settings.fadeFillStyle;
 
     function draw() {
@@ -517,16 +666,14 @@ map.on('click', function(e) {
     document.getElementById("chart-latlng").innerHTML = latlng;
     document.getElementById("radar-latlng").innerHTML = latlng;
 
-    MeteoblueAdd (e);
-    HisDataAdd (e);
-    RadarAdd (e);
+    OnClickMeteoblue (e);
+    OnClickHisData (e);
+    OnClickRadarChart (e);
 
 });
 
-
 //Baselayer control
 /**/
-
 var layer0 = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoienRtYWppYSIsImEiOiJjaXQ3NXZ1b3UwMDBqMnlwaG5ybzc3eG1tIn0.2yhUZ1f7SFjPFwKSEYHj6g', {
         maxZoom: 18,
         id: 'mapbox.light'
@@ -552,9 +699,6 @@ var baseLayers = {
     //'GeoQ灰色底图': L.tileLayer('http://map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer/tile/{z}/{y}/{x}').addTo(map)
     'GeoQ灰色底图': layer4
 };
-
-
-
 
 
 var layercontrol = L.control.layers(baseLayers, {
@@ -595,24 +739,35 @@ var IconWeatherStation = L.icon({
 });
 
 //create wind farm marker
-var markWindFarm1 = L.marker([42.556081, 117.677574], { tags: ['WindFarm'],icon: IconWindFarm });
-markWindFarm1.addTo(map).bindPopup('围场 红松洼(金风)');
-var markWindFarm2 = L.marker([41.113574, 114.25874], { tags: ['WindFarm'],icon: IconWindFarm });
-markWindFarm2.addTo(map).bindPopup('尚义 大满井(GE)');
-var markWindFarm3 = L.marker([41.869509, 114.492587], { tags: ['WindFarm'],icon: IconWindFarm });
-markWindFarm3.addTo(map).bindPopup('康保 卧龙兔山(GE)');
-var markWindFarm4 = L.marker([45.613298, 122.837394], { tags: ['WindFarm'],icon: IconWindFarm });
-markWindFarm4.addTo(map).bindPopup('白城 查干浩特(金风)');
-var markWindFarm5 = L.marker([37.256695, 120.886997], { tags: ['WindFarm'],icon: IconWindFarm });
-markWindFarm5.addTo(map).bindPopup('栖霞 唐山硼(金风)');
+var markWindFarms = new Array();
+var markWindFarmsLen = 0;
+var markWeatherStations = new Array();
+var markWeatherStationsLen = 0;
 
-map.removeLayer(markWindFarm1);
-map.removeLayer(markWindFarm2);
-map.removeLayer(markWindFarm3);
-map.removeLayer(markWindFarm4);
-map.removeLayer(markWindFarm5);
+$.ajaxSettings.async = false; 
+$.getJSON('data/windfarm.json', function(data){
+   markWindFarmsLen = data.rows.length
+   for (var i = 0; i < markWindFarmsLen; i++) {
+      var markWindFarm = L.marker(data.rows[i].latlng, { tags: ['WindFarm'],icon: IconWindFarm });
+      markWindFarm.addTo(map).bindPopup('data.rows[i].popupname');
+      markWindFarms.push(markWindFarm);
+      map.removeLayer(markWindFarm);
+   }
+});
 
 //create weather station marker
+$.ajaxSettings.async = false; 
+$.getJSON('data/weatherstation.json', function(data){
+   markWeatherStationsLen = data.rows.length
+   for (var i = 0; i < markWeatherStationsLen; i++) {
+      var markWeatherStation = L.marker(data.rows[i].latlng, { tags: ['WeatherStation'],icon: IconWeatherStation });
+      markWeatherStation.addTo(map).bindPopup('data.rows[i].popupname');
+      markWeatherStations.push(markWeatherStation);
+      map.removeLayer(markWeatherStation);
+   }
+});
+
+/**
 var markWeatherStation1 = L.marker([47.1,119.56], { tags: ['WeatherStation'],icon: IconWeatherStation});
 markWeatherStation1.addTo(map).bindPopup('阿尔山');
 var markWeatherStation2 = L.marker([47.13,119.45], { tags: ['WeatherStation'],icon: IconWeatherStation});
@@ -628,7 +783,7 @@ map.removeLayer(markWeatherStation1);
 map.removeLayer(markWeatherStation2);
 map.removeLayer(markWeatherStation3);
 map.removeLayer(markWeatherStation4);
-map.removeLayer(markWeatherStation5);
+map.removeLayer(markWeatherStation5); */
 
 //create FilterButton
 L.control.tagFilterButton({
@@ -636,33 +791,33 @@ L.control.tagFilterButton({
     data: ['WindFarm', 'WeatherStation'], 
     icon: '<img src="images/filter.png">',
     onSelectionComplete: function(tags) {
-        map.removeLayer(markWindFarm1);
-        map.removeLayer(markWindFarm2);
-        map.removeLayer(markWindFarm3);
-        map.removeLayer(markWindFarm4);
-        map.removeLayer(markWindFarm5);
+        
+        for (var i = 0; i < markWindFarmsLen; i++) {
+            map.removeLayer(markWindFarms[i]);
+        }
 
-        map.removeLayer(markWeatherStation1);
-        map.removeLayer(markWeatherStation2);
-        map.removeLayer(markWeatherStation3);
-        map.removeLayer(markWeatherStation4);
-        map.removeLayer(markWeatherStation5);
+        for (var i = 0; i < markWeatherStationsLen; i++) {
+            map.removeLayer(markWeatherStations[i]);
+        }
 
         for (i in tags) {
             if (tags[i] == 'WindFarm'){
-                markWindFarm1.addTo(map);
-                markWindFarm2.addTo(map);
-                markWindFarm3.addTo(map);
-                markWindFarm4.addTo(map);
-                markWindFarm5.addTo(map);
+                for (var i = 0; i < markWindFarmsLen; i++) {
+                    markWindFarms[i].addTo(map);
+                }
             }
             
             if (tags[i] == 'WeatherStation'){
+
+                for (var i = 0; i < markWindFarmsLen; i++) {
+                    markWeatherStations[i].addTo(map);
+                }
+/**
                 markWeatherStation1.addTo(map);
                 markWeatherStation2.addTo(map);
                 markWeatherStation3.addTo(map);
                 markWeatherStation4.addTo(map);
-                markWeatherStation5.addTo(map);
+                markWeatherStation5.addTo(map); */
             }
         }
     }
@@ -713,122 +868,41 @@ function centerMap (e) {
   map.panTo(e.latlng);
 }
 
-function MeteoblueAdd (e) {
-    var latlng = "";
-    if (e.latlng.lat>=0){
-        latlng = latlng + e.latlng.lat + "N";
-    }
-    else{
-        latlng = latlng + (-e.latlng.lat) + "S";
-    }
+function OnClickMeteoblue (e) {
+    var meteobluesrc = "";
+    windMeteoblueModel.set({
+        lat: e.latlng.lat,
+        lng: e.latlng.lng
+    });
+    meteobluesrc += windMeteoblueModel.get('prefix');
+    meteobluesrc += windMeteoblueModel.get('index');
+    meteobluesrc += windMeteoblueModel.get('suffix');
 
-    if (e.latlng.lng>=0){
-        latlng = latlng + e.latlng.lng + "E";
-    }
-    else{
-        latlng = latlng + (-e.latlng.lng) + "W";
-    }
-    
-    //"39N116E8";
-    /*document.getElementById('meteoblue').src="https://www.meteoblue.com/en/weather/widget/three/"+latlng+"_Asia%2FShanghai?geoloc=fixed&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=image" */
-    document.getElementById('meteoblue').src="https://www.meteoblue.com/en/weather/widget/daily/"+latlng+"_Asia%2FShanghai?geoloc=fixed&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&coloured=coloured&pictoicon=1&maxtemperature=1&mintemperature=1&windspeed=1&winddirection=1&precipitation=1&precipitationprobability=1&spot=1&layout=light";
+    document.getElementById('meteoblue').src=meteobluesrc;
 }
 
-function HisDataAdd (e) {
+function OnClickHisData (e) {
     var myChart = echarts.init(document.getElementById('chart-data'));
-    option = {
-      title: {
-          text: '历史数据柱状图对比'
-      },
-      tooltip: {
-          trigger: 'axis'
-      },
-      xAxis: [{
-          type: 'category',
-          data: ['7月', '8月', '9月', '10月']
-      }],
-      yAxis: [{
-          type: 'value',
-          name: '风量',
-          min: 0,
-          max: 10,
-          interval: 1,
-          axisLabel: {
-              formatter: '{value} m3/h'
-          }
-      }, {
-          type: 'value',
-          name: '温度',
-          min: -10,
-          max: 10,
-          interval: 1,
-          axisLabel: {
-              formatter: '{value} °C'
-          }
-      }],
-      series: [{
-          name: '风量',
-          type: 'bar',
-          data: [Math.random()*10, Math.random()*10, Math.random()*10, Math.random()*10]
-      }, {
-          name: '温度',
-          type: 'bar',
-          data: [Math.random()*10, Math.random()*10, Math.random()*10, Math.random()*10]
-      }]
-    };
+
+    windHisDataModel.set({
+        lat: e.latlng.lat,
+        lng: e.latlng.lng
+    });
+    var option = windHisDataModel.get("option");
 
     myChart.setOption(option);
 }
 
-function RadarAdd(e){
+function OnClickRadarChart(e){
     var myChart = echarts.init(document.getElementById('radar-data'));
-    option = {
-        title: {
-            text: '风场选址各维度条件评估'
-        },
-        tooltip: {},
-        //legend: {
-            //data: ['风场平均', '该点数据']    
-        //},
-        radar: {
-            // shape: 'circle',
-            indicator: [
-                { name: '平均风速', max: 100},
-                { name: '风功率密度', max: 100},
-                { name: '主要风向分布', max: 100},
-                { name: '年风能可利用时间', max: 100},
-                { name: '地势平坦度', max: 100},
-                { name: '灾害发生频率', max: 100}
-            ]    
-        },
-        series: [{
-            name: '风场选址各维度条件评估',
-            type: 'radar',
-            // areaStyle: {normal: {}}, 
-            data : [
-                {
-                    value : [(Math.random()*100).toFixed(2), 
-                            (Math.random()*100).toFixed(2), 
-                            (Math.random()*100).toFixed(2), 
-                            (Math.random()*100).toFixed(2), 
-                            (Math.random()*100).toFixed(2), 
-                            (Math.random()*100).toFixed(2)],
-                    name : '风场平均'
-                },
-                {
-                    value : [(Math.random()*100).toFixed(2), 
-                            (Math.random()*100).toFixed(2), 
-                            (Math.random()*100).toFixed(2), 
-                            (Math.random()*100).toFixed(2), 
-                            (Math.random()*100).toFixed(2), 
-                            (Math.random()*100).toFixed(2)],
-                    name : '该点数据'
-                }
-            ]
-        }]
-    };
-    myChart.setOption(option);
 
+    windRadarChartModel.set({
+        lat: e.latlng.lat,
+        lng: e.latlng.lng
+    });
+    var option = windRadarChartModel.get("option");
+
+    myChart.setOption(option);
 }
 
 
@@ -844,20 +918,11 @@ var heat = L.heatLayer(addressPoints,{
     gradient: {0:'green', 0.2:'Blue',0.5:'yellow'/**/, 0.7:'coral',1:'orangered'  }
 }).addTo(map);
 
-/*****************************
-*****Color Scale ***************
-*****************************/
-
-
 /////////////////////////////////////////////////////////////////////////////
 //
 //Layer Render
 //
 /////////////////////////////////////////////////////////////////////////////
-
-
-//temp 
-var settings = createSettings();
 
 //temp 
 interpolateField();
@@ -916,7 +981,7 @@ layer.addTo(map);
 //Others
 //
 /////////////////////////////////////////////////////////////////////////////
-function submitForm () {
+function onChangeSettings () {
     animateCanceled = true;
 
     //clear
@@ -927,6 +992,13 @@ function submitForm () {
     settings.particleCount = document.getElementById("density").value;
     settings.frameRate = document.getElementById("frameRate").value;
     settings.maxParticleAge = document.getElementById("length").value;
+    settings.thickness = document.getElementById("thickness").value;
+/** 
+    document.getElementById("densityLabel").innerHTML = document.getElementById("density").value;
+    document.getElementById("frameRateLabel").innerHTML = document.getElementById("frameRate").value;
+    document.getElementById("lengthLabel").innerHTML = document.getElementById("length").value;
+    document.getElementById("thicknessLabel").innerHTML = document.getElementById("thickness").value;
+ */
     if (document.getElementById("windopen").checked == true){
         animateCanceled = false;
     }else{
@@ -937,12 +1009,13 @@ function submitForm () {
         tileLayerArray[tilelayer].setOpacity(document.getElementById("backgroundopacity").value);
         //console.log(tilelayer);
     }
+    document.getElementById("backgroundopacityLabel").innerHTML = document.getElementById("backgroundopacity").value;
 
     //redraw
     window.setTimeout('layer.render()', 1000);
 }
 
-function submitFormOverlay () {
+function onChangeSettingsOverlay () {
 
     var overlayFlag = true;
     if (document.getElementById("overlaytypeNo").checked == true){
@@ -1014,8 +1087,6 @@ function submitFormOverlay () {
         });
         //data/goldwindEarth_temp.json
         //http://54.222.192.208:64003/goldwindEarth?file=2016111600_180-temp-height-80m-gfs-0.50.json
-
-
 
     }
 

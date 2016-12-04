@@ -1,0 +1,30 @@
+{
+"name": "WeatherStations",
+"rows":[
+    {
+        "id":1,
+        "latlng":[47.1,119.56],
+        "popupname":"阿尔山"
+    },
+    {
+        "id":2,
+        "latlng":[47.13,119.45],
+        "popupname":"海拉尔"
+    },
+    {
+        "id":3,
+        "latlng":[45.38,122.5],
+        "popupname":"白城"
+    },
+    {
+        "id":4,
+        "latlng":[46.03,88.24],
+        "popupname":"哈巴河"
+    },        
+    {
+        "id":5,
+        "latlng":[39.46,98.29],
+        "popupname":"酒泉"
+    }
+  ]
+}
